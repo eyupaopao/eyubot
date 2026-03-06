@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option csharp_namespace = "EyuBot.App.Grpc";
+
+package eyubot;
+
+// EyuBot 服务定义
+service EyuBotService {
+  // 发送消息并获取回复
+  rpc SendMessage (MessageRequest) returns (MessageResponse);
+  // 切换对话上下文
+  rpc SwitchContext (ContextRequest) returns (ContextResponse);
+  // 列出所有对话上下文
+  rpc ListContexts (EmptyRequest) returns (ContextListResponse);
+  // 创建新对话
+  rpc CreateContext (EmptyRequest) returns (ContextResponse);
+  // 删除对话
+  rpc DeleteContext (ContextRequest) returns (DeleteResponse);
+  // 获取系统状态
+  rpc GetStatus (EmptyRequest) returns (StatusResponse);
+}
+
+// 请求和响应消息
+message MessageRequest {
+  string message = 1;
+  string context_id = 2;
+}
+
+message MessageResponse {
+  string response = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message ContextRequest {
+  string context_id = 1;
+}
+
+message ContextResponse {
+  string context_id = 1;
+  int32 message_count = 2;
+  bool success = 3;
+  string error = 4;
+}
+
+message ContextListResponse {
+  repeated string context_ids = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message DeleteResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message StatusResponse {
+  string status = 1;
+  string storage_type = 2;
+  int32 conversation_count = 3;
+  bool success = 4;
+  string error = 5;
+}
+
+message EmptyRequest {
+  // 空请求
+}

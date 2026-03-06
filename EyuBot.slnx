@@ -7,4 +7,5 @@
     <Project Path="src/EyuBot.Skills/EyuBot.Skills.csproj" />
     <Project Path="src/EyuBot.Subagents/EyuBot.Subagents.csproj" />
   </Folder>
+  <Project Path="src/EyuBot.CLI/EyuBot.CLI.csproj" />
 </Solution>
