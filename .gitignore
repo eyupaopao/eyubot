@@ -1,0 +1,280 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]ogs/
+
+# Visual Studio
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+.vs/
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUNIT
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Build Results of an ATL Project
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
+# Benchmark Results
+BenchmarkDotNet.Artifacts/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# StyleCop
+StyleCopReport.xml
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Chutzpah Test files
+_Chutzpah*
+
+# Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Windows Forms designer
+*.cache
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# TFS 2012 Local Workspace
+$tf/
+
+# Guidance Automation Toolkit
+*.gpState
+
+# ReSharper
+*.[Rr]e[Ss]harper
+*.[Rr]e[Ss]harper.*
+*.resharper.user
+
+# TeamCity
+_TeamCity*
+
+# DotCover
+*.dotCover
+
+# AxoCover for VS Code
+.coverage.result.dir/
+
+# Coverlet to exclude from being pushed to GitHub repository
+coverage.*.json
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# MightyMoose
+*.mm.*
+AutoTest.Net/
+
+# Web workbench
+.sass-cache/
+
+# Installshield output folder
+[Ee]xpress/
+
+# DocProject is a documentation generator add-in
+DocProject/buildhelp/
+DocProject/Help/*.HxT
+DocProject/Help/*.HxC
+DocProject/Help/*.hhc
+DocProject/Help/*.hhk
+DocProject/Help/*.hhp
+DocProject/Help/Html2
+DocProject/Help/html
+
+# Click-Once directory
+publish/
+
+# Publish Web Output
+*.[Pp]ublish.xml
+*.azurePub.xml
+*.pubxml
+*.pubxml.user
+*.publishproj
+
+# Microsoft SQL Server
+*.mdf
+*.ldf
+
+# Windows Azure
+csx/
+*.build.csdef
+
+# Windows Store app package directory
+AppPackages/
+BundleArtifacts/
+
+# Visual Studio cache/options directory (up to and including Visual Studio 2017)
+# User-specific files at the team level
+*.CodeStore.sqlite
+*.CodeStore.sqlite-journal
+
+# Cache directory used by MSBuild
+*.cache/
+
+# Cake - Uncomment if you are using it
+# tools/**
+# !tools/packages.config
+
+# JetBrains Rider
+*.suo
+*.userprefs
+[Aa]ssets/Editor/[Cc]ache/
+[Aa]ssets/[Cc]onsole/[Ll]og/
+[Aa]ssets/[Cc]onsole/[Ll]og.meta
+[Pp]rojectSettings/[Aa]sset[sz] [Tt]ool[sz] [Ss]ettings.dat
+[Pp]rojectSettings/[Aa]sset[sz] [Tt]ool[sz] [Ss]ettings.xml
+[Rr]ider/[Ss]ystem/
+[Rr]ider/[Tt]emp/
+
+# CodeRush personal settings
+.cr/personal
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.spyderproject
+.spyproject
+.ropeproject
+/site-packages/
+.pydevproject
+.DS_Store
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.com.apple.system dirs
+.com.apple.FinderInfo
+.CFUserTextEncoding
+
+# Linux
+*~
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+@Desktop.ini
+DESKTOP.INI
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+*.swp
+
+# Temporary folders
+temp/
+tmp/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Output of 'dotnet ef migrations add'
+**/Migrations/
+
+# Environment specific files
+.env
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+config/

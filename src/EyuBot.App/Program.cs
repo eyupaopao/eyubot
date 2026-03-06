@@ -1,0 +1,58 @@
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using EyuBot.Core;
+using EyuBot.Core.DependencyInjection;
+
+namespace EyuBot.App
+{
+    /// <summary>
+    /// Entry point for the EyuBot application
+    /// </summary>
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var host = Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    // Add EyuBot core services
+                    services.AddEyuBotCore(hostContext.Configuration);
+                    
+                    // Register sample agent
+                    services.AddSingleton<IAgent, SampleAgent>();
+                })
+                .Build();
+
+            var agent = host.Services.GetRequiredService<IAgent>();
+            await agent.InitializeAsync();
+            
+            // Simple demonstration
+            Console.WriteLine($"Agent initialized: {agent.Name}");
+            var response = await agent.ProcessMessageAsync("Hello, who are you?");
+            Console.WriteLine($"Response: {response}");
+            
+            await agent.DisposeAsync();
+            
+            Console.WriteLine("\nPress any key to exit...");
+            Console.ReadKey();
+        }
+    }
+    
+    /// <summary>
+    /// Sample implementation of an agent for demonstration
+    /// </summary>
+    public class SampleAgent : BaseAgent
+    {
+        public override string Name { get; protected set; } = "Sample EyuBot";
+        
+        public override async Task<string> ProcessMessageAsync(string message)
+        {
+            await Task.Delay(10); // Simulate processing
+            
+            return $"I am {Name}, an agent powered by the EyuBot framework. " +
+                   $"You said: '{message}'. This is a sample response from the core framework.";
+        }
+    }
+}
