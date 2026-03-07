@@ -24,6 +24,7 @@ namespace EyuBot.App
             // Add OpenAPI services
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            var expectedToken = builder.Configuration["Mcp:Token"];
             var app = builder.Build();
 
 
@@ -39,9 +40,6 @@ namespace EyuBot.App
                     await next();
                     return;
                 }
-                
-                var configManager = new ConfigManager();
-                var expectedToken = configManager.Configuration["Mcp:Token"];
                 
                 // Skip authentication if no token is configured
                 if (string.IsNullOrEmpty(expectedToken))

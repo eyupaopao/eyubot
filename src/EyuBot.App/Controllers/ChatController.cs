@@ -13,7 +13,7 @@ namespace EyuBot.App.Controllers
     public class ChatController : ControllerBase
     {
         [HttpPost]
-        public async Task<ActionResult<ChatResponse>> Post([FromBody] ChatRequest request)
+        public async Task<IActionResult> Post([FromBody] ChatRequest request)
         {
             try
             {
@@ -21,6 +21,7 @@ namespace EyuBot.App.Controllers
                 Console.WriteLine($"ConfigPath: {System.IO.Path.Combine(AppContext.BaseDirectory, "appsettings.json")}");
                 Console.WriteLine($"StorageType: {configManager.Configuration["Storage:Type"]}");
                 Console.WriteLine($"ConnectionString: {configManager.Configuration["Storage:Sqlite:ConnectionString"]}");
+                Console.WriteLine($"Stream: {request.Stream}");
                 
                 IStorage storage = null;
                 try
@@ -65,7 +66,33 @@ namespace EyuBot.App.Controllers
                     // 保存失败，继续执行
                 }
 
-                return Ok(new ChatResponse { Response = response, Success = true });
+                if (request.Stream)
+                {
+                    // 流式响应
+                    Response.ContentType = "text/event-stream";
+                    Response.Headers.Append("Cache-Control", "no-cache");
+                    Response.Headers.Append("Connection", "keep-alive");
+
+                    // 模拟流式输出
+                    var words = response.Split(' ');
+                    foreach (var word in words)
+                    {
+                        await Response.WriteAsync($"data: {word} \n\n");
+                        await Response.Body.FlushAsync();
+                        await Task.Delay(100);
+                    }
+
+                    // 结束流
+                    await Response.WriteAsync("data: [DONE]\n\n");
+                    await Response.Body.FlushAsync();
+
+                    return new EmptyResult();
+                }
+                else
+                {
+                    // 普通响应
+                    return Ok(new ChatResponse { Response = response, Success = true });
+                }
             }
             catch (Exception ex)
             {
@@ -97,6 +124,7 @@ namespace EyuBot.App.Controllers
     {
         public string Message { get; set; }
         public string ContextId { get; set; }
+        public bool Stream { get; set; } = false;
     }
 
     public class ChatResponse
