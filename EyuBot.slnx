@@ -1,11 +1,12 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/EyuBot.Abstractions/EyuBot.Abstractions.csproj" />
     <Project Path="src/EyuBot.App/EyuBot.App.csproj" />
+    <Project Path="src/EyuBot.CLI/EyuBot.CLI.csproj" />
     <Project Path="src/EyuBot.Core/EyuBot.Core.csproj" />
     <Project Path="src/EyuBot.IMAdapter/EyuBot.IMAdapter.csproj" />
     <Project Path="src/EyuBot.MCP/EyuBot.MCP.csproj" />
     <Project Path="src/EyuBot.Skills/EyuBot.Skills.csproj" />
     <Project Path="src/EyuBot.Subagents/EyuBot.Subagents.csproj" />
   </Folder>
-  <Project Path="src/EyuBot.CLI/EyuBot.CLI.csproj" />
 </Solution>

@@ -1,6 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -43,31 +41,30 @@ namespace EyuBot.CLI
             var statusCommand = CreateStatusCommand();
 
             // 添加子命令到根命令
-            rootCommand.AddCommand(chatCommand);
-            rootCommand.AddCommand(configCommand);
-            rootCommand.AddCommand(contextCommand);
-            rootCommand.AddCommand(contextsCommand);
-            rootCommand.AddCommand(createCommand);
-            rootCommand.AddCommand(deleteCommand);
-            rootCommand.AddCommand(statusCommand);
-
-            // 构建命令行解析器
-            var parser = new CommandLineBuilder(rootCommand)
-                .UseDefaults()
-                .Build();
+            rootCommand.Subcommands.Add(chatCommand);
+            rootCommand.Subcommands.Add(configCommand);
+            rootCommand.Subcommands.Add(contextCommand);
+            rootCommand.Subcommands.Add(contextsCommand);
+            rootCommand.Subcommands.Add(createCommand);
+            rootCommand.Subcommands.Add(deleteCommand);
+            rootCommand.Subcommands.Add(statusCommand);
 
             // 执行命令
-            return await parser.InvokeAsync(args);
+            return rootCommand.Parse(args).Invoke();
         }
 
         private static Command CreateChatCommand()
         {
             var command = new Command("chat", "发送消息并获取回复");
-            var messageArgument = new Argument<string>("message", "要发送的消息");
-            command.AddArgument(messageArgument);
-
-            command.SetHandler(async (message) =>
+            var messageArgument = new Argument<string>("message")
             {
+                Description = "要发送的消息"
+            };
+            command.Arguments.Add(messageArgument);
+
+            command.SetAction(async (parseResult) =>
+            {
+                var message = parseResult.GetValue(messageArgument);
                 Console.WriteLine($"发送消息: {message}");
                 
                 var request = new { Message = message, ContextId = "default" };
@@ -91,7 +88,8 @@ namespace EyuBot.CLI
                 {
                     Console.WriteLine($"HTTP错误: {response.StatusCode}");
                 }
-            }, messageArgument);
+                return 0;
+            });
 
             return command;
         }
@@ -100,11 +98,12 @@ namespace EyuBot.CLI
         {
             var command = new Command("config", "配置引导工具");
 
-            command.SetHandler(() =>
+            command.SetAction((parseResult) =>
             {
                 var configManager = new ConfigManager();
                 var wizard = new ConfigWizard(configManager);
                 wizard.Run();
+                return 0;
             });
 
             return command;
@@ -113,11 +112,15 @@ namespace EyuBot.CLI
         private static Command CreateContextCommand()
         {
             var command = new Command("context", "切换对话上下文");
-            var idArgument = new Argument<string>("id", "对话ID");
-            command.AddArgument(idArgument);
-
-            command.SetHandler(async (id) =>
+            var idArgument = new Argument<string>("id")
             {
+                Description = "对话ID"
+            };
+            command.Arguments.Add(idArgument);
+
+            command.SetAction(async (parseResult) =>
+            {
+                var id = parseResult.GetValue(idArgument);
                 Console.WriteLine($"切换到对话: {id}");
                 
                 var request = new { ContextId = id };
@@ -141,7 +144,8 @@ namespace EyuBot.CLI
                 {
                     Console.WriteLine($"HTTP错误: {response.StatusCode}");
                 }
-            }, idArgument);
+                return 0;
+            });
 
             return command;
         }
@@ -150,7 +154,7 @@ namespace EyuBot.CLI
         {
             var command = new Command("contexts", "列出所有对话上下文");
 
-            command.SetHandler(async () =>
+            command.SetAction(async (parseResult) =>
             {
                 var response = await _httpClient.GetAsync("/api/contexts");
                 
@@ -177,6 +181,7 @@ namespace EyuBot.CLI
                 {
                     Console.WriteLine($"HTTP错误: {response.StatusCode}");
                 }
+                return 0;
             });
 
             return command;
@@ -186,7 +191,7 @@ namespace EyuBot.CLI
         {
             var command = new Command("create", "创建新对话");
 
-            command.SetHandler(async () =>
+            command.SetAction(async (parseResult) =>
             {
                 var response = await _httpClient.PostAsync("/api/context/create", null);
                 
@@ -207,6 +212,7 @@ namespace EyuBot.CLI
                 {
                     Console.WriteLine($"HTTP错误: {response.StatusCode}");
                 }
+                return 0;
             });
 
             return command;
@@ -215,11 +221,15 @@ namespace EyuBot.CLI
         private static Command CreateDeleteCommand()
         {
             var command = new Command("delete", "删除对话");
-            var idArgument = new Argument<string>("id", "对话ID");
-            command.AddArgument(idArgument);
-
-            command.SetHandler(async (id) =>
+            var idArgument = new Argument<string>("id")
             {
+                Description = "对话ID"
+            };
+            command.Arguments.Add(idArgument);
+
+            command.SetAction(async (parseResult) =>
+            {
+                var id = parseResult.GetValue(idArgument);
                 var response = await _httpClient.DeleteAsync($"/api/context/{id}");
                 
                 if (response.IsSuccessStatusCode)
@@ -243,7 +253,8 @@ namespace EyuBot.CLI
                 {
                     Console.WriteLine($"HTTP错误: {response.StatusCode}");
                 }
-            }, idArgument);
+                return 0;
+            });
 
             return command;
         }
@@ -252,7 +263,7 @@ namespace EyuBot.CLI
         {
             var command = new Command("status", "显示系统状态");
 
-            command.SetHandler(async () =>
+            command.SetAction(async (parseResult) =>
             {
                 var response = await _httpClient.GetAsync("/api/status");
                 
@@ -276,6 +287,7 @@ namespace EyuBot.CLI
                 {
                     Console.WriteLine($"HTTP错误: {response.StatusCode}");
                 }
+                return 0;
             });
 
             return command;
