@@ -1,0 +1,469 @@
+﻿﻿<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>%(DocumentTitle)</title>
+    <link rel="stylesheet" type="text/css" href="%(StylesPath)">
+    <link rel="stylesheet" type="text/css" href="./index.css">
+    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+    %(HeadContent)
+</head>
+
+<body>
+    <div id="swagger-ui">
+    </div>
+    <div id="login" class="login">
+        <div id="login-form">
+            <div class="login-title">
+                <label>Authorize</label>
+            </div>
+            <div class="login-area">
+                <div class="form-row">
+                    <label>User Name:</label>
+                    <input type="text" id="usernameInput" placeholder="">
+                </div>
+                <div class="form-row">
+                    <label>Password:</label>
+                    <input type="password" id="passwordInput">
+                </div>
+                <div class="form-row">
+                    <button id="submit" class="form-button">Login</button>
+                </div>
+                <div id="login-error">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="%(ScriptBundlePath)" charset="utf-8"></script>
+    <script src="%(ScriptPresetsPath)" charset="utf-8"></script>
+    <script>
+
+
+        var loginDiv = document.querySelector("div.login");
+        /* Source: https://gist.github.com/lamberta/3768814
+        * Parse a string function definition and return a function object. Does not use eval.
+        * @param {string} str
+        * @return {function}
+        *
+        * Example:
+        *  var f = function (x, y) { return x * y; };
+        *  var g = parseFunction(f.toString());
+        *  g(33, 3); //=> 99
+        */
+        function parseFunction(str) {
+            if (!str) return void (0);
+
+            var fn_body_idx = str.indexOf('{'),
+                fn_body = str.substring(fn_body_idx + 1, str.lastIndexOf('}')),
+                fn_declare = str.substring(0, fn_body_idx),
+                fn_params = fn_declare.substring(fn_declare.indexOf('(') + 1, fn_declare.lastIndexOf(')')),
+                args = fn_params.split(',');
+
+            args.push(fn_body);
+
+            function Fn() {
+                return Function.apply(this, args);
+            }
+            Fn.prototype = Function.prototype;
+
+            return new Fn();
+        }
+
+        window.onload = function () {
+            var configObject = JSON.parse('%(ConfigObject)');
+            var oauthConfigObject = JSON.parse('%(OAuthConfigObject)');
+
+            // Workaround for https://github.com/swagger-api/swagger-ui/issues/5945
+            configObject.urls.forEach(function (item) {
+                if (item.url.startsWith("http") || item.url.startsWith("/")) return;
+                item.url = window.location.href.replace("index.html", item.url).split('#')[0];
+            });
+
+            // If validatorUrl is not explicitly provided, disable the feature by setting to null
+            if (!configObject.hasOwnProperty("validatorUrl"))
+                configObject.validatorUrl = null
+
+            // If oauth2RedirectUrl isn't specified, use the built-in default
+            if (!configObject.hasOwnProperty("oauth2RedirectUrl"))
+                configObject.oauth2RedirectUrl = (new URL("oauth2-redirect.html", window.location.href)).href;
+
+            // Apply mandatory parameters
+            configObject.dom_id = "#swagger-ui";
+            configObject.presets = [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset];
+            configObject.layout = "StandaloneLayout";
+
+            // Parse and add interceptor functions
+            //var interceptors = JSON.parse('%(Interceptors)');
+            //if (interceptors.RequestInterceptorFunction)
+            configObject.requestInterceptor = defaultRequestInterceptor;
+            //if (interceptors.ResponseInterceptorFunction)
+            configObject.responseInterceptor = defaultResponseInterceptor;
+
+            if (configObject.plugins) {
+                configObject.plugins = configObject.plugins.map(eval);
+            }
+
+            // Begin Swagger UI call region
+
+            const ui = SwaggerUIBundle(configObject);
+
+            ui.initOAuth(oauthConfigObject);
+
+            // End Swagger UI call region
+
+            window.ui = ui
+            // default response interceptor
+            // 发现验证失败，删除access_token。
+            function defaultResponseInterceptor(response) {
+                if (response.status === 401) {
+                    console.log(localStorage)
+                    localStorage.removeItem("access_token");
+                    sessionStorage.removeItem("token")
+                    console.log(response.status)
+                    ui.authActions.logout(["Bearer"]);
+                    console.log(response.status)
+                }
+                return response;
+            }
+
+            // default request interceptor
+            function defaultRequestInterceptor(request) {
+                //console.log(request)
+                var url = request.url;
+                //if (!url) return request;
+                //// add swagger header
+                //request.headers["request-from"] = "swagger";
+
+                //// handle template
+                //var temps = getUrlTemplate(url);
+                //if (temps && temps.length > 0) {
+                //    for (var i = 0; i < temps.length; i++) {
+                //        var temp = temps[i];
+                //        var key = temp.substring(1, temp.length - 1);
+                //        var queryKey = getQueryVariable(key, url);
+                //        if (queryKey) {
+                //            url = updateQueryVariable(url.replace(temp, queryKey), key);
+                //        }
+                //        else url = url.replace(temp, '');
+                //    }
+                //    request.url = url;
+                //}
+
+                //// handle culture lang
+                //var culture = getQueryVariable(cultureKey);
+                //if (culture && culture.length > 0) {
+                //    request.url = updateQueryVariable(url, cultureKey, culture);
+                //}
+
+                return request;
+            }
+
+            const getToken = () => {
+                token = localStorage.getItem("access_token");
+                if (!token) {
+                    token = sessionStorage.getItem("token");
+                    if (!token) {
+                        return undefined
+                    }
+                    else {
+                        localStorage.setItem("access_token", token);
+                    }
+                }
+                var payload = parseJwt(token);
+                var exp = new Date(payload.exp * 1000)
+                //var exp = new Date(localStorage.getItem("expiration"));
+                if (!exp || exp < Date.now()) {
+                    localStorage.removeItem("access_token")
+                    sessionStorage.removeItem("token")
+                    return undefined
+                }
+                return token
+            }
+            function parseJwt(token) {
+                if (!token) {
+                    console.error("Token is empty or undefined.");
+                    return null;
+                }
+
+                try {
+                    // 分割 JWT，获取第二部分（Payload）
+                    const base64Url = token.split('.')[1];
+                    // 将 Base64Url 解码为字符串
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const jsonPayload = decodeURIComponent(
+                        atob(base64)
+                            .split('')
+                            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                            .join('')
+                    );
+
+                    // 将字符串解析为 JSON 对象
+                    return JSON.parse(jsonPayload);
+                } catch (error) {
+                    console.error("Failed to parse JWT:", error);
+                    return null;
+                }
+            }
+            // a hacky way to append authorization header - we are basically intercepting
+            // all requests, if no authorization was attached while user did authorized himself,
+            // append token to request
+            const ensureAuthorization = (swagger) => {
+                // retrieve bearer token form authorization
+                // override fetch function of Swagger to make sure
+                // that on every request of the client is authorized append auth-header
+                const fetch = swagger.fn.fetch;
+                swagger.fn.fetch = (req) => {
+                    if (!req.headers.Authorization) {
+                        const token = getToken();
+                        if (token) {
+                            //swagger.preauthorizeApiKey("Bearer", token);
+                            //req.headers.Authorization = bearer;
+                        }
+                    }
+                    return fetch(req);
+                }
+            };
+            // makes that once user triggers performs authorization,
+            // the schema will be reloaded form backend url
+            const reloadSchemaOnAuth = (swagger) => {
+                const getCurrentUrl = () => {
+                    const spec = swagger.getState()._root.entries.find(e => e[0] === 'spec');
+                    if (!spec)
+                        return undefined;
+
+                    const url = spec[1]._root.entries.find(e => e[0] === 'url');
+                    if (!url)
+                        return undefined;
+
+                    return url[1];
+                }
+                const reload = () => {
+                    const url = getCurrentUrl();
+                    if (url) {
+                        swagger.specActions.download(url);
+                    }
+                };
+
+                const handler = (caller, args) => {
+                    console.log("reload")
+                    const result = caller(args);
+                    if (result && result.then) {
+                        result.then(() => reload())
+                    }
+                    else {
+                        reload();
+                    }
+                    return result;
+                }
+
+                const auth = swagger.authActions.authorize;
+                swagger.authActions.authorize = (args) => handler(auth, args);
+                const logout = swagger.authActions.logout;
+                swagger.authActions.logout = (args) => handler(logout, args);
+            };
+            /**
+             * Reset input element placeholder
+             * @param {any} swagger
+             */
+            const clearInputPlaceHolder = (swagger) => {
+                //https://github.com/api-platform/core/blob/main/src/Bridge/Symfony/Bundle/Resources/public/init-swagger-ui.js#L6-L41
+                new MutationObserver(function (mutations, self) {
+                    var elements = document.querySelectorAll("input[type=text]");
+                    for (var i = 0; i < elements.length; i++)
+                        elements[i].placeholder = "";
+                }).observe(document, { childList: true, subtree: true });
+            }
+            /**
+             * Show login UI
+             * @param {any} swagger
+             */
+            const showUI = (swagger) => {
+
+
+                //https://github.com/api-platform/core/blob/main/src/Bridge/Symfony/Bundle/Resources/public/init-swagger-ui.js#L6-L41
+                new MutationObserver(function (mutations, self) {
+                    var rootDiv = document.querySelector("#swagger-ui > section > div.swagger-ui > div:nth-child(2)");
+                    if (rootDiv == null)
+                        return;
+
+                    const token = getToken();
+                    //Check authentication
+                    if (token) {
+                        loginDiv.style.display = "none"
+                        swagger.preauthorizeApiKey("Bearer", token);
+                        var authDiv = rootDiv.querySelector("div.scheme-container > section > div.auth-wrapper")
+                        if (authDiv != null) {
+                            var logOutBtn = authDiv.querySelector("div.logout");
+                            if (logOutBtn != null)
+                                return;
+                            var btn = authDiv.querySelector("button");
+                            if (btn != null) btn.remove()
+                            var logOutBtn = createLogoutUI();
+                            authDiv.appendChild(logOutBtn)
+                        }
+                        else {
+                            var logOutBtn = rootDiv.querySelector("div.logout");
+                            if (logOutBtn != null)
+                                return;
+                            var logOutBtn = createLogoutUI();
+                            logOutBtn.classList.add("schemes")//schemes wrapper block col-12
+                            logOutBtn.classList.add("wrapper")
+                            logOutBtn.classList.add("block")
+                            logOutBtn.classList.add("col-12")
+                            rootDiv.insertBefore(logOutBtn, rootDiv.children[1])
+                        }
+                    }
+                    else {
+                        loginDiv.style.display = "block"
+                    }
+
+
+
+                }).observe(document, { childList: true, subtree: true });
+
+                /**
+                 * createLogout ui elements
+                 * @param {any} rootDiv
+                 */
+                const createLogoutUI = function () {
+                    var div = document.createElement("div");
+                    div.className = "logout";
+                    var logoutButton = document.createElement("button")
+                    logoutButton.type = "button"
+                    logoutButton.classList.add("btn");
+                    logoutButton.classList.add("auth");
+                    logoutButton.classList.add("cancel");
+                    logoutButton.classList.add("button");
+                    logoutButton.innerText = "Logout";
+                    logoutButton.onclick = function () {
+                        localStorage.removeItem("access_token")
+                        sessionStorage.removeItem("token")
+                        swagger.authActions.logout(["Bearer"]);
+                    };
+                    div.appendChild(logoutButton);
+
+                    div.style.display = "flex";  // 启用 flex 布局
+                    div.style.justifyContent = "flex-end";  // 使内容靠右对齐
+                    return div
+                }
+            }
+            ensureAuthorization(ui);
+            reloadSchemaOnAuth(ui);
+            clearInputPlaceHolder(ui);
+            showUI(ui);
+        }
+
+
+        /**
+         * Manage login
+         * @param {any} username UserName
+         * @param {any} password Password
+         */
+        const login = function (username, password) {
+            var xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == XMLHttpRequest.DONE) {
+                    if (xhr.status == 200 || xhr.status == 400) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (!response || !response.data || !response.data.token) {
+                            alert(response.errors);
+                            console.log(response)
+                            return;
+                        }
+                        var headers = xhr.getAllResponseHeaders();
+
+                        const tokenMatch = headers.match(/token:\s*([^\r\n]+)/i);
+                        //const expMatch = headers.match(/expiration:\s([^\r\n]+)/i);
+                        if (tokenMatch && tokenMatch[1]
+                            //&& expMatch && expMatch[1]
+                        ) {
+                            var obj = {
+                                "Bearer": {
+                                    "name": "Bearer",
+                                    "schema": {
+                                        "type": "apiKey",
+                                        "description": "Please enter into field the word 'Bearer' following by space and JWT",
+                                        "name": "Authorization",
+                                        "in": "header"
+                                    },
+                                    value: "Bearer " + tokenMatch[1]
+                                }
+                            };
+                            //localStorage.setItem("expiration", expMatch[1]);
+                            localStorage.setItem("access_token", tokenMatch[1]);
+                            sessionStorage.setItem("token", tokenMatch[1])
+                            // swagger authorize
+                            window.ui.authActions.authorize(obj);
+
+                        }
+                        else {
+                            alert('login fail')
+                            console.log(response.data)
+                        }
+                    }
+                    else
+                        alert('error ' + xhr.status);
+
+                }
+            };
+            //xhr.open("POST", "/api/user/Login1", true);
+            //xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            //var data = JSON.stringify({ "Username": username, "Password": password })
+
+            //console.log(data)
+            xhr.open("POST", "/api/user/Login", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            var data = "username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password);
+
+            xhr.send(data);
+        }
+        var userInput = document.getElementById('usernameInput');
+        var passInput = document.getElementById('passwordInput');
+        var submitBtn = document.getElementById('submit');
+        submitBtn.onclick = function () {
+            var userName = userInput.value;
+            var password = passInput.value;
+
+            if (userName === "" || password === "") {
+                alert("Insert userName and password!");
+                return;
+            }
+
+            login(userName, password);
+        };
+
+        // Keydown event for username input to listen for Enter key
+        userInput.addEventListener('keydown', function (event) {
+            if (event.key === "Enter") {
+                var userName = userInput.value;
+                var password = passInput.value;
+
+                if (userName === "" || password === "") {
+                    alert("Insert userName and password!");
+                    return;
+                }
+
+                login(userName, password);
+            }
+        });
+
+        // Keydown event for password input to listen for Enter key
+        passInput.addEventListener('keydown', function (event) {
+            if (event.key === "Enter") {
+                var userName = userInput.value;
+                var password = passInput.value;
+
+                if (userName === "" || password === "") {
+                    alert("Insert userName and password!");
+                    return;
+                }
+
+                login(userName, password);
+            }
+        });
+    </script>
+</body>
+</html>

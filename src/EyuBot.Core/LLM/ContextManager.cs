@@ -64,9 +64,19 @@ namespace EyuBot.Core.LLM
         /// <returns>True if the context was removed, false otherwise</returns>
         public async System.Threading.Tasks.Task<bool> RemoveContextAsync(string contextId)
         {
-            if (_contexts.Remove(contextId) && _storage != null)
+            if (_contexts.Remove(contextId))
             {
-                await _storage.DeleteConversationAsync(contextId);
+                if (_storage != null)
+                {
+                    try
+                    {
+                        await _storage.DeleteConversationAsync(contextId);
+                    }
+                    catch
+                    {
+                        // 存储删除失败，继续执行
+                    }
+                }
                 return true;
             }
             return false;

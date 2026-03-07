@@ -1,0 +1,93 @@
+﻿#swagger-ui img[alt="Swagger UI"] {
+    display: block;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    content: url('/images/logo.png');
+    max-width: 100%;
+    max-height: 100%;
+}
+
+
+#login-form {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 382px;
+    border-color: #49cc90;
+    background: rgba(73, 204, 144, .1);
+    border: 1px solid #000;
+    border-radius: 4px;
+    box-shadow: 0 0 3px rgb(0 0 0 / 19%);
+    font-family: monospace;
+    overflow: hidden;
+}
+/* 背景阴影层 */
+.login {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色 */
+    z-index: 1000; /* 确保在其他元素上方 */
+}
+
+.login-title {
+    background-color: rgb(27, 27, 27);
+    height: 50px;
+    padding: 7px 0 0 7px;
+    font-size: 14px;
+    border: none;
+    outline: none;
+    font-weight: 700;
+    border-radius: 3px;
+    color: #fff;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.login-area {
+    padding: 25px 40px 32px;
+    background-color: rgb(232, 246, 240);
+}
+
+.form-row {
+    padding: 6px 0;
+}
+
+    .form-row label {
+        font-size: 14px;
+        flex: 1;
+        margin: 0;
+        font-family: sans-serif;
+        color: #3b4151;
+        font-weight: 700;
+    }
+
+    .form-row input {
+        width: 100%;
+        max-width: 340px;
+        min-width: 100px;
+        margin: 5px 0;
+        padding: 8px 10px;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        background: #fff;
+    }
+
+    .form-row button {
+        padding: 8px 40px;
+        font-size: 14px;
+        border: none;
+        outline: none;
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: 3px;
+        background-color: #4990e2;
+        color: #fff;
+        border-color: #4990e2;
+        box-shadow: 0 0 5px rgb(0 0 0 / 30%);
+        width: 100%;
+        box-sizing: border-box;
+    }

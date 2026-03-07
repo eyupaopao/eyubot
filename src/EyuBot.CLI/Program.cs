@@ -15,8 +15,8 @@ namespace EyuBot.CLI
         {
             // Initialize HTTP client with token
             var configManager = new ConfigManager();
-            var serverUrl = configManager.Configuration["Mcp:ServerUrl"] ?? "http://localhost:5000";
-            var token = configManager.Configuration["Mcp:Token"];
+            var serverUrl = "http://localhost:5000"; // 强制使用HTTP连接
+            var token = configManager.Configuration["Mcp:Token"] ?? "eyubot-secret-token-2026"; // 使用与服务器相同的令牌
             
             // Create HttpClientHandler to ignore SSL certificate errors (for development only)
             var handler = new HttpClientHandler();
@@ -55,39 +55,158 @@ namespace EyuBot.CLI
 
         private static Command CreateChatCommand()
         {
-            var command = new Command("chat", "发送消息并获取回复");
-            var messageArgument = new Argument<string>("message")
-            {
-                Description = "要发送的消息"
-            };
-            command.Arguments.Add(messageArgument);
+            var command = new Command("chat", "启动对话交互");
+
+            var contextOption = new Option<string>("--context", "对话ID");
+            command.Options.Add(contextOption);
 
             command.SetAction(async (parseResult) =>
             {
-                var message = parseResult.GetValue(messageArgument);
-                Console.WriteLine($"发送消息: {message}");
-                
-                var request = new { Message = message, ContextId = "default" };
-                var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("/api/chat", content);
-                
-                if (response.IsSuccessStatusCode)
+                var contextId = parseResult.GetValue(contextOption);
+
+                // 如果没有指定对话ID，列出所有对话供选择
+                if (string.IsNullOrEmpty(contextId))
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<ChatResponse>(json);
-                    if (result?.Success == true)
+                    Console.WriteLine("正在获取对话列表...");
+                    var contextsResponse = await _httpClient.GetAsync("/api/contexts");
+                    if (contextsResponse.IsSuccessStatusCode)
                     {
-                        Console.WriteLine($"回复: {result.Response}");
+                        var contextsJson = await contextsResponse.Content.ReadAsStringAsync();
+                        var contextsResult = JsonConvert.DeserializeObject<ContextListResponse>(contextsJson);
+                        if (contextsResult?.Success == true && contextsResult.ContextIds.Length > 0)
+                        {
+                            Console.WriteLine("可用的对话:");
+                            for (int i = 0; i < contextsResult.ContextIds.Length; i++)
+                            {
+                                Console.WriteLine($"{i + 1}. {contextsResult.ContextIds[i]}");
+                            }
+                            Console.WriteLine($"{contextsResult.ContextIds.Length + 1}. 创建新对话");
+                            Console.WriteLine($"{contextsResult.ContextIds.Length + 2}. 删除对话");
+                            
+                            Console.Write("请选择操作编号: ");
+                            var input = Console.ReadLine();
+                            if (int.TryParse(input, out int choice))
+                            {
+                                if (choice > 0 && choice <= contextsResult.ContextIds.Length)
+                                {
+                                    contextId = contextsResult.ContextIds[choice - 1];
+                                    Console.WriteLine($"选择对话: {contextId}");
+                                }
+                                else if (choice == contextsResult.ContextIds.Length + 1)
+                                {
+                                    // 创建新对话
+                                    var createResponse = await _httpClient.PostAsync("/api/context/create", null);
+                                    if (createResponse.IsSuccessStatusCode)
+                                    {
+                                        var createJson = await createResponse.Content.ReadAsStringAsync();
+                                        var createResult = JsonConvert.DeserializeObject<ContextResponse>(createJson);
+                                        if (createResult?.Success == true)
+                                        {
+                                            contextId = createResult.ContextId;
+                                            Console.WriteLine($"创建新对话: {contextId}");
+                                        }
+                                    }
+                                }
+                                else if (choice == contextsResult.ContextIds.Length + 2)
+                                {
+                                    // 删除对话
+                                    Console.Write("请输入要删除的对话ID: ");
+                                    var deleteId = Console.ReadLine();
+                                    if (!string.IsNullOrEmpty(deleteId))
+                                    {
+                                        var deleteResponse = await _httpClient.DeleteAsync($"/api/context/{deleteId}");
+                                        if (deleteResponse.IsSuccessStatusCode)
+                                        {
+                                            var deleteJson = await deleteResponse.Content.ReadAsStringAsync();
+                                            var deleteResult = JsonConvert.DeserializeObject<DeleteResponse>(deleteJson);
+                                            if (deleteResult?.Success == true)
+                                            {
+                                                Console.WriteLine($"删除对话成功: {deleteId}");
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine($"删除对话失败: {deleteId}");
+                                                if (!string.IsNullOrEmpty(deleteResult?.Error))
+                                                {
+                                                    Console.WriteLine($"错误: {deleteResult.Error}");
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($"HTTP错误: {deleteResponse.StatusCode}");
+                                        }
+                                    }
+                                    return 0;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // 没有对话，创建新对话
+                            var createResponse = await _httpClient.PostAsync("/api/context/create", null);
+                            if (createResponse.IsSuccessStatusCode)
+                            {
+                                var createJson = await createResponse.Content.ReadAsStringAsync();
+                                var createResult = JsonConvert.DeserializeObject<ContextResponse>(createJson);
+                                if (createResult?.Success == true)
+                                {
+                                    contextId = createResult.ContextId;
+                                    Console.WriteLine($"创建新对话: {contextId}");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 如果仍然没有对话ID，使用默认值
+                if (string.IsNullOrEmpty(contextId))
+                {
+                    contextId = "default";
+                }
+
+                // 进入对话循环
+                Console.WriteLine($"进入对话模式 (对话ID: {contextId})");
+                Console.WriteLine("输入 'exit' 退出对话");
+                
+                while (true)
+                {
+                    Console.Write("你: ");
+                    var message = Console.ReadLine();
+                    
+                    if (message == "exit")
+                    {
+                        break;
+                    }
+                    
+                    if (string.IsNullOrEmpty(message))
+                    {
+                        continue;
+                    }
+
+                    var request = new { Message = message, ContextId = contextId };
+                    var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                    var response = await _httpClient.PostAsync("/api/chat", content);
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+                        var result = JsonConvert.DeserializeObject<ChatResponse>(json);
+                        if (result?.Success == true)
+                        {
+                            Console.WriteLine($"AI: {result.Response}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"错误: {result?.Error}");
+                        }
                     }
                     else
                     {
-                        Console.WriteLine($"错误: {result?.Error}");
+                        Console.WriteLine($"HTTP错误: {response.StatusCode}");
                     }
                 }
-                else
-                {
-                    Console.WriteLine($"HTTP错误: {response.StatusCode}");
-                }
+                
                 return 0;
             });
 
